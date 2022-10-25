@@ -11,24 +11,22 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
     grid.place(shadowCursor, tiles.getTileLocation(grid.spriteCol(cursor), grid.spriteRow(cursor) + 1))
 })
 function updatePX (whichPlayer: string) {
-    if (moveBoatFlag == 1) {
-        if (whichPlayer == "Player1") {
-            moveBoat(boatSpriteArrayP1[currentBoat], boatRotateArrayP1)
-            if (isOverlapping(boatSpriteArrayP1)) {
-                if (rotateFlag != "nothing") {
-                    boatRotateArrayP1[currentBoat] = rotateFlag
-                } else {
-                    grid.place(cursor, grid.getLocation(shadowCursor))
-                }
+    if (whichPlayer == "Player1") {
+        moveBoat(boatSpriteArrayP1[currentBoat], boatRotateArrayP1)
+        if (isOverlapping(boatSpriteArrayP1)) {
+            if (rotateFlag != "nothing") {
+                boatRotateArrayP1[currentBoat] = rotateFlag
+            } else {
+                grid.place(cursor, grid.getLocation(shadowCursor))
             }
-        } else {
-            moveBoat(boatSpriteArrayP2[currentBoat], boatRotateArrayP2)
-            if (isOverlapping(boatSpriteArrayP2)) {
-                if (rotateFlag != "nothing") {
-                    boatRotateArrayP2[currentBoat] = rotateFlag
-                } else {
-                    grid.place(cursor, grid.getLocation(shadowCursor))
-                }
+        }
+    } else {
+        moveBoat(boatSpriteArrayP2[currentBoat], boatRotateArrayP2)
+        if (isOverlapping(boatSpriteArrayP2)) {
+            if (rotateFlag != "nothing") {
+                boatRotateArrayP2[currentBoat] = rotateFlag
+            } else {
+                grid.place(cursor, grid.getLocation(shadowCursor))
             }
         }
     }
@@ -49,11 +47,16 @@ function makeBoatVisible (boatArray: Sprite[]) {
     }
 }
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    currentBoat += 1
-    grid.place(cursor, tiles.getTileLocation(0, 0))
-    if (currentBoat == 3) {
-        currentBoat = 0
-        switchPlayer()
+    if (moveBoatFlag == 3) {
+        isHitOrMiss(boatSpriteArrayP2)
+    } else {
+        currentBoat += 1
+        grid.place(cursor, tiles.getTileLocation(0, 0))
+        if (currentBoat == 3) {
+            currentBoat = 0
+            switchPlayer()
+            moveBoatFlag += 1
+        }
     }
 })
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
@@ -62,6 +65,9 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     grid.place(shadowCursor, tiles.getTileLocation(grid.spriteCol(cursor) + 1, grid.spriteRow(cursor)))
 })
 function switchPlayer () {
+    if (moveBoatFlag == 2) {
+        cursor.setFlag(SpriteFlag.Invisible, false)
+    }
     if (currentPlayer == "Player1") {
         currentPlayer = "Player2"
         for (let value of boatSpriteArrayP1) {
@@ -104,6 +110,53 @@ function moveBoat (boatArray: any[], boatRotateArray: string[]) {
             grid.place(currentBoatSprite, tiles.getTileLocation(grid.spriteCol(cursor) + iterator, grid.spriteRow(cursor)))
         }
         iterator += 1
+    }
+}
+function isHitOrMiss (enemyBoats: Sprite[][]) {
+    for (let index = 0; index <= 2; index++) {
+        for (let value of enemyBoats[index]) {
+            if (grid.spriteCol(value) == grid.spriteCol(cursor) && grid.spriteRow(value) == grid.spriteRow(cursor)) {
+                boomSprite = sprites.create(img`
+                    . . . . 2 2 2 2 2 2 2 2 . . . . 
+                    . . . 2 4 4 4 5 5 4 4 4 2 2 2 . 
+                    . 2 2 5 5 d 4 5 5 5 4 4 4 4 2 . 
+                    . 2 4 5 5 5 5 d 5 5 5 4 5 4 2 2 
+                    . 2 4 d d 5 5 5 5 5 5 d 4 4 4 2 
+                    2 4 5 5 d 5 5 5 d d d 5 5 5 4 4 
+                    2 4 5 5 4 4 4 d 5 5 d 5 5 5 4 4 
+                    4 4 4 4 . . 2 4 5 5 . . 4 4 4 4 
+                    . . b b b b 2 4 4 2 b b b b . . 
+                    . b d d d d 2 4 4 2 d d d d b . 
+                    b d d b b b 2 4 4 2 b b b d d b 
+                    b d d b b b b b b b b b b d d b 
+                    b b d 1 1 3 1 1 d 1 d 1 1 d b b 
+                    . . b b d d 1 1 3 d d 1 b b . . 
+                    . . 2 2 4 4 4 4 4 4 4 4 2 2 . . 
+                    . . . 2 2 4 4 4 4 4 2 2 2 . . . 
+                    `, SpriteKind.Projectile)
+                grid.place(boomSprite, grid.getLocation(cursor))
+            } else {
+                boomSprite = sprites.create(img`
+                    . . . . . . . . b b . . . . . . 
+                    . . . . . . . b 9 1 b . . . . . 
+                    . . b b . . . b 9 9 b . . . . . 
+                    . b 9 1 b . . b b b . . b b b . 
+                    . b 3 9 b . b b b b . b 9 9 1 b 
+                    . b b b b b 9 9 1 1 b b 3 9 9 b 
+                    . . . . b 9 d 9 1 1 b b b b b . 
+                    . . . . b 5 3 9 9 9 b . . . . . 
+                    . . b b b 5 3 3 d 9 b . . . . . 
+                    . b 5 1 b b 5 5 9 b b b b . . . 
+                    . b 5 5 b b b b b b 3 9 9 3 . . 
+                    . b b b b b b b . b 9 1 1 9 b . 
+                    . . . b 5 5 1 b . b 9 1 1 9 b . 
+                    . . . b 5 5 5 b . b 3 9 9 3 b . 
+                    . . . . b b b . . . b b b b . . 
+                    . . . . . . . . . . . . . . . . 
+                    `, SpriteKind.Projectile)
+                grid.place(boomSprite, grid.getLocation(cursor))
+            }
+        }
     }
 }
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
@@ -300,6 +353,7 @@ function isOverlapping (boatSpriteArrayPX: Sprite[][]) {
     }
     return 0
 }
+let boomSprite: Sprite = null
 let iterator = 0
 let boatRotateArrayP2: string[] = []
 let boatSpriteArrayP2: Sprite[][] = []
@@ -527,5 +581,7 @@ shadowCursor = sprites.create(img`
 grid.snap(cursor)
 grid.snap(shadowCursor)
 game.onUpdate(function () {
-    updatePX(currentPlayer)
+    if (moveBoatFlag < 3) {
+        updatePX(currentPlayer)
+    }
 })
